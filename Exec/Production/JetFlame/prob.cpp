@@ -75,11 +75,11 @@ amrex_probinit(
   }
 
   CKUBMS(
-    &PeleC::h_prob_parm_device->T_fu, PeleC::h_prob_parm_device->Y_fuel,
-    &PeleC::h_prob_parm_device->U_fuel);
+    PeleC::h_prob_parm_device->T_fu, PeleC::h_prob_parm_device->Y_fuel,
+    PeleC::h_prob_parm_device->U_fuel);
   CKUBMS(
-    &PeleC::h_prob_parm_device->T_ox, PeleC::h_prob_parm_device->Y_ox,
-    &PeleC::h_prob_parm_device->U_ox);
+    PeleC::h_prob_parm_device->T_ox, PeleC::h_prob_parm_device->Y_ox,
+    PeleC::h_prob_parm_device->U_ox);
 
   PeleC::h_prob_parm_device->center_xy[0] = 0.5 * (probhi[0] + problo[0]);
   PeleC::h_prob_parm_device->center_xy[1] = 0.5 * (probhi[1] + problo[1]);
