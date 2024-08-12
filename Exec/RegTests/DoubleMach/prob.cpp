@@ -22,6 +22,8 @@ amrex_probinit(
     pp.query("rho0", PeleC::h_prob_parm_device->rho0);
     pp.query("rho1", PeleC::h_prob_parm_device->rho1);
     pp.query("x1", PeleC::h_prob_parm_device->x1);
+    pp.query("vx", PeleC::h_prob_parm_device->vx);
+    pp.query("vy", PeleC::h_prob_parm_device->vy);
   }
 
   PeleC::h_prob_parm_device->massfrac[0] = 1.0;

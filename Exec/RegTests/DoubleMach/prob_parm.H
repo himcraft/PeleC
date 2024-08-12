@@ -7,15 +7,17 @@
 
 struct ProbParmDevice
 {
-  amrex::Real p0 = 1e5;
-  amrex::Real p1 = 1.165e7;
-  amrex::Real rho0 = 0.014;
-  amrex::Real rho1 = 0.08;
+  amrex::Real p0 = 1.0;
+  amrex::Real p1 = 116.5;
+  amrex::Real rho0 = 1.4;
+  amrex::Real rho1 = 8.0;
   amrex::Real T0 = 300.0;
   amrex::Real T1 = 300.0;
   amrex::Real e0 = 1.0;
   amrex::Real e1 = 1.0;
   amrex::Real x1 = 0.2;
+  amrex::Real vx = 7.144709581221618;
+  amrex::Real vy = -4.125;
   amrex::GpuArray<amrex::Real, NUM_SPECIES> massfrac = {1.0};
 };
 
