@@ -34,7 +34,7 @@ pc_initdata(
   const amrex::Real x = prob_lo[0] + (i + 0.5) * dx[0];
   const amrex::Real y = prob_lo[1] + (j + 0.5) * dx[1];
   // const amrex::Real z = prob_lo[2] + (k + 0.5) * dx[2];
-  if (x > prob_parm.x1 && y < (x-prob_parm.x1)*2.0) {
+  if (x > prob_parm.x1 && y < (x-prob_parm.x1)*1.7320508075688772) {
     state(i, j, k, URHO) = prob_parm.rho0;
     state(i, j, k, UMX) = 0.0;
     state(i, j, k, UMY) = 0.0;
@@ -62,16 +62,46 @@ AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
 void
 bcnormal(
-  const amrex::Real* /*x[AMREX_SPACEDIM]*/,
+  const amrex::Real x[AMREX_SPACEDIM],
   const amrex::Real* /*s_int[NVAR]*/,
-  amrex::Real* /*s_ext[NVAR]*/,
-  const int /*idir*/,
-  const int /*sgn*/,
-  const amrex::Real /*time*/,
+  amrex::Real s_ext[NVAR],
+  const int idir,
+  const int sgn,
+  const amrex::Real time,
   amrex::GeometryData const& /*geomdata*/,
-  ProbParmDevice const& /*prob_parm*/,
+  ProbParmDevice const& prob_parm,
   const amrex::GpuArray<amrex::Real, AMREX_SPACEDIM>& /*turb_fluc*/)
 {
+  amrex::Real headx = time * 8.57365 + prob_parm.x1 + 1.7320508075688772 / 3.0; 
+  amrex::Real rho = 0.0, u = 0.0, v = 0.0, w = 0.0, eint = 0.0, T = 0.0;
+  auto eos = pele::physics::PhysicsType::eos();
+  if ((idir == 0) && (sgn == 1)) { 
+    T = prob_parm.T1;
+    u = 8.57365;
+    v = -4.95;
+    rho = prob_parm.rho1;
+    eint = prob_parm.rho1 * prob_parm.e1;
+  } else if ((idir == 1) && (sgn == -1)) {
+    if (x[0] > headx){
+      T = prob_parm.T0;
+      u = 0.0;
+      v = 0.0;
+      rho = prob_parm.rho0;
+      eint = prob_parm.rho0 * prob_parm.e0;
+    } else {
+      T = prob_parm.T1;
+      u = 8.57365;
+      v = -4.95;
+      rho = prob_parm.rho1;
+      eint = prob_parm.rho1 * prob_parm.e1;
+    }
+  }
+  s_ext[URHO] = rho;
+  s_ext[UMX] = rho * u;
+  s_ext[UMY] = rho * v;
+  s_ext[UEINT] = rho * eint;
+  s_ext[UEDEN] = rho * eint;
+  s_ext[UTEMP] = T;  
 }
 
 void pc_prob_close();
