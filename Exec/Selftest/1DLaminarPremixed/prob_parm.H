@@ -14,9 +14,9 @@ struct ProbParmDevice
   amrex::Real T_i = 300.0;
   amrex::Real e = 1.0;
   amrex::Real e_i = 1.0;
-  amrex::Real Y_init_H2 = 0.06;
-  amrex::Real Y_init_O2 = 0.5;
-  amrex::Real Y_init_N2 = 0.44;
+  amrex::Real Y_init_H2 = 0.028;
+  amrex::Real Y_init_O2 = 0.226;
+  amrex::Real Y_init_N2 = 0.746;
   amrex::GpuArray<amrex::Real, NUM_SPECIES> massfrac = {0.0};
 };
 

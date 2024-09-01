@@ -34,24 +34,27 @@ pc_initdata(
   const amrex::Real x = prob_lo[0] + (i + 0.5) * dx[0];
   //const amrex::Real y = prob_lo[1] + (j + 0.5) * dx[1];
   // const amrex::Real z = prob_lo[2] + (k + 0.5) * dx[2];
-  if (x < 16.0){
+  amrex::Real u[3] = {0.0};
+  if (x <= 0.1){
     state(i, j, k, URHO) = prob_parm.rho_i;
-    state(i, j, k, UMX) = 0.0;
-    state(i, j, k, UMY) = 0.0;
-    state(i, j, k, UMZ) = 0.0;
+    state(i, j, k, UMX) = prob_parm.rho_i * u[0];
+    state(i, j, k, UMY) = prob_parm.rho_i * u[1];
+    state(i, j, k, UMZ) = prob_parm.rho_i * u[2];
     state(i, j, k, UEINT) = prob_parm.rho_i * prob_parm.e_i;
-    state(i, j, k, UEDEN) = prob_parm.rho_i * prob_parm.e_i;
+    state(i, j, k, UEDEN) = prob_parm.rho_i * (prob_parm.e_i +
+		    0.5 * (u[0] * u[0] + u[1] * u[1] + u[2] * u[2]));
     state(i, j, k, UTEMP) = prob_parm.T_i;
     for (int n = 0; n < NUM_SPECIES; n++)
       state(i, j, k, UFS + n) = prob_parm.rho_i * prob_parm.massfrac[n];
 
   } else {
     state(i, j, k, URHO) = prob_parm.rho;
-    state(i, j, k, UMX) = 0.0;
-    state(i, j, k, UMY) = 0.0;
-    state(i, j, k, UMZ) = 0.0;
+    state(i, j, k, UMX) = prob_parm.rho_i * u[0];
+    state(i, j, k, UMY) = prob_parm.rho_i * u[1];
+    state(i, j, k, UMZ) = prob_parm.rho_i * u[2];
     state(i, j, k, UEINT) = prob_parm.rho * prob_parm.e;
-    state(i, j, k, UEDEN) = prob_parm.rho * prob_parm.e; 
+    state(i, j, k, UEDEN) = prob_parm.rho_i * (prob_parm.e_i +
+		    0.5 * (u[0] * u[0] + u[1] * u[1] + u[2] * u[2]));
     state(i, j, k, UTEMP) = prob_parm.T;
     for (int n = 0; n < NUM_SPECIES; n++)
       state(i, j, k, UFS + n) = prob_parm.rho * prob_parm.massfrac[n];
@@ -74,14 +77,24 @@ bcnormal(
 {
   amrex::Real rho = 0.0, u = 0.0, v = 0.0, w = 0.0, eint = 0.0, eden = 0.0, T = 0.0;
   auto eos = pele::physics::PhysicsType::eos();
-  if ((idir == 0) && (sgn == 1)) { 
+  if (sgn == 1) { 
     T = prob_parm.T_i;
     u = 0.0;
     v = 0.0;
     w = 0.0;
     rho = prob_parm.rho_i;
     eint = prob_parm.rho_i * prob_parm.e_i;
-    eden = prob_parm.rho_i * prob_parm.e_i;
+    eden = prob_parm.rho_i * (prob_parm.e_i +
+		    0.5 * (u * u + v * v + w * w));
+  } else {
+    T = prob_parm.T;
+    u = 0.0;
+    v = 0.0;
+    w = 0.0;
+    rho = prob_parm.rho;
+    eint = prob_parm.rho * prob_parm.e;
+    eden = prob_parm.rho_i * (prob_parm.e_i +
+		    0.5 * (u * u + v * v + w * w));
   }
   s_ext[URHO] = rho;
   s_ext[UMX] = u;
