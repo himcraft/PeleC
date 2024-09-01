@@ -1,5 +1,5 @@
 # ------------------  INPUTS TO MAIN PROGRAM  -------------------
-max_step = 1000
+max_step = 100000
 stop_time = 0.5
 #stop_time = 0.0034 # 1 flowthroughs (1 flowthrough = L / umax)
 
@@ -7,15 +7,15 @@ stop_time = 0.5
 geometry.is_periodic =  0  1  1
 geometry.coord_sys   =  0       # 0 => cart
 geometry.prob_lo     =  0   0.0 0.0
-geometry.prob_hi     =  512 1   1 
-amr.n_cell           =  1024 2 2
+geometry.prob_hi     =  0.32 0.0025   0.0025 
+amr.n_cell           =  256 2 2
 
 # >>>>>>>>>>>>>  BC KEYWORDS <<<<<<<<<<<<<<<<<<<<<<
 # Interior, UserBC, Symmetry, SlipWall, NoSlipWall
 # >>>>>>>>>>>>>  BC KEYWORDS <<<<<<<<<<<<<<<<<<<<<<
 
-pelec.lo_bc       =  "Hard" "Interior" "Interior"
-pelec.hi_bc       =  "FOExtrap" "Interior"   "Interior"
+pelec.lo_bc       =  "NoSlipWall" "Interior" "Interior"
+pelec.hi_bc       =  "NoSlipWall" "Interior" "Interior"
 
 # Problem setup
 #pelec.eb_boundary_T = 300.
@@ -25,8 +25,9 @@ pelec.hi_bc       =  "FOExtrap" "Interior"   "Interior"
 pelec.do_hydro = 1
 pelec.do_mol = 0
 pelec.do_react = 1
-#pelec.chem_integrator = "ReactorRK64"
-pelec.allow_negative_energy = 0
+pelec.chem_integrator = "ReactorArkode"
+#cvode.solve_type = "GMRES"
+pelec.allow_negative_energy = 1
 pelec.diffuse_temp = 1
 pelec.diffuse_vel  = 1
 pelec.diffuse_spec = 1
@@ -43,8 +44,11 @@ pelec.change_max     = 1.05     # maximum increase in dt over successive steps
 
 # DIAGNOSTICS & VERBOSITY
 pelec.sum_interval   = 1       # timesteps between computing mass
-pelec.v              = 1       # verbosity in PeleC cpp files
+pelec.v              = 0       # verbosity in PeleC cpp files
 amr.v                = 1       # verbosity in Amr.cpp
+amr.data_log         = datlog
+#amr.data_log         = extremalog
+#pelec.extrema_spec_name = HO2
 #amr.grid_log         = grdlog  # name of grid logging file
 
 # REFINEMENT / REGRIDDING
@@ -52,23 +56,34 @@ amr.max_level       = 0       # maximum level number allowed
 amr.ref_ratio       = 2       # refinement ratio
 amr.regrid_int      = 2       # how often to regrid
 amr.blocking_factor = 1       # block factor in grid generation
-amr.max_grid_size   = 64
+amr.max_grid_size   = 256
 
 # CHECKPOINT FILES
 amr.checkpoint_files_output = 0
 amr.check_file      = chk      # root name of checkpoint file
-amr.check_int       = -1       # number of timesteps between checkpoints
+amr.check_int       = 10000       # number of timesteps between checkpoints
 
 # PLOTFILES
 amr.plot_files_output = 1
 amr.plot_file       = plt
-amr.plot_int        = 200
-amr.derive_plot_vars=pressure x_velocity y_velocity
+amr.plot_int        = 2000
+amr.plot_vars       = Temp density heatRelease
+amr.derive_plot_vars=pressure x_velocity Y(H2) Y(O2) Y(H2O) Y(OH)
+pelec.plot_rhoy = 0
+pelec.plot_massfrac = 1
 
 # PROBLEM
 prob.T   = 300.0
-prob.T_i = 1200.0
+prob.T_i = 2000.0
 prob.P   = 1013250.0
 
 tagging.max_dengrad_lev = 5
 tagging.dengrad = 0.05
+
+pelec.diagnostics = xNormPlane
+pelec.xNormPlane.type = DiagFramePlane
+pelec.xNormPlane.file = xNormCent
+pelec.xNormPlane.normal = 1
+pelec.xNormPlane.center = 0.00125
+pelec.xNormPlane.int = 100
+pelec.xNormPlane.field_names = density Temp heatRelease Y(H2) Y(H2O) Y(OH) Y(HO2)
