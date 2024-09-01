@@ -9,6 +9,9 @@ plt*
 chk*
 *.visit
 Backtrace.*
+xNorm*
+yNorm*
+zNorm*
 tmp_build_dir
 .ccls
 .ccls-cache
