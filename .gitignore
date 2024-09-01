@@ -6,6 +6,9 @@ extremalog
 ic.txt
 plt*
 chk*
+xNorm*
+yNorm*
+zNorm*
 tmp_build_dir
 .ccls
 .ccls-cache
