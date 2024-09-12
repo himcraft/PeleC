@@ -70,18 +70,62 @@ AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
 void
 bcnormal(
-  const amrex::Real* /*x[AMREX_SPACEDIM]*/,
+  const amrex::Real x[AMREX_SPACEDIM],
   const amrex::Real s_int[NVAR],
   amrex::Real s_ext[NVAR],
   const int /*idir*/,
   const int /*sgn*/,
   const amrex::Real /*time*/,
-  amrex::GeometryData const& /*geomdata*/,
-  ProbParmDevice const& /*prob_parm*/,
+  amrex::GeometryData const& geomdata,
+  ProbParmDevice const& prob_parm,
   const amrex::GpuArray<amrex::Real, AMREX_SPACEDIM>& /*turb_fluc*/)
 {
-  for (int n = 0; n < NVAR; n++) {
-    s_ext[n] = s_int[n];
+  amrex::Real rho = 0.0, u = 0.0, v = 0.0, w = 0.0, eint = 0.0, T = 0.0;
+  amrex::Real massfrac[NUM_SPECIES] = {0.0};
+  for (int n = 0; n < NUM_SPECIES; n++) {
+    massfrac[n] = prob_parm.massfrac_r[n];
+  }
+  auto eos = pele::physics::PhysicsType::eos();
+
+  const amrex::Real* prob_hi = geomdata.ProbHi();
+  const amrex::Real* dx = geomdata.CellSize();
+  const amrex::Real xd = prob_hi[0] - 0.5 * dx[0];
+  const amrex::Real rho_int = s_int[URHO];
+  const amrex::Real u_int = s_int[UMX] / rho_int;
+  const amrex::Real v_int = s_int[UMY] / rho_int;
+  const amrex::Real w_int = s_int[UMZ] / rho_int;
+  const amrex::Real T_int = s_int[UTEMP];
+  amrex::Real p_int = 0.0, cs_int = 0.0;
+  eos.RTY2P(rho_int, T_int, massfrac, p_int);
+  eos.RTY2Cs(rho_int, T_int, massfrac, cs_int);
+
+  const amrex::Real xb = prob_hi[0];
+  const amrex::Real pb = prob_parm.p_r;
+  const amrex::Real rhob =
+    s_int[URHO] + (pb - p_int) / (cs_int * cs_int);
+  const amrex::Real ub = u_int + (p_int - pb) / (rho_int * cs_int);
+  const amrex::Real vb = v_int;
+  const amrex::Real wb = w_int;
+
+  rho = (rhob - rho_int) / (xb - xd) * (x[0] -xd) + rho_int;
+  const amrex::Real p = (pb - p_int) / (xb - xd) * (x[0] - xd) + p_int;
+
+  eos.RYP2E(rho, massfrac, p, eint);
+  eos.EY2T(eint, massfrac, T);
+
+  u = (ub - u_int) / (xb - xd) * (x[0] - xd) + u_int;
+  v = (vb - v_int) / (xb - xd) * (x[0] - xd) + v_int;
+  w = (wb - w_int) / (xb - xd) * (x[0] - xd) + w_int;
+
+  s_ext[URHO] = rho;
+  s_ext[UMX] = rho * u;
+  s_ext[UMY] = rho * v;
+  s_ext[UMZ] = rho * w;
+  s_ext[UEINT] = rho * eint;
+  s_ext[UEDEN] = rho * (eint + 0.5 * (u * u + v * v + w * w));
+  s_ext[UTEMP] = T;
+  for (int n = 0; n < NUM_SPECIES; n++) {
+    s_ext[UFS + n] = rho * prob_parm.massfrac_r[n];
   }
 }
 
