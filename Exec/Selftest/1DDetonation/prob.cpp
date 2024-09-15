@@ -30,7 +30,9 @@ amrex_probinit(
 	  (34.3196 + PeleC::h_prob_parm_device->ER); 
   PeleC::h_prob_parm_device->massfrac_r[N2_ID] = 1.0 - 
 	  PeleC::h_prob_parm_device->massfrac_r[H2_ID] - PeleC::h_prob_parm_device->massfrac_r[O2_ID];
-  PeleC::h_prob_parm_device->massfrac_l[N2_ID] = 1.0;
+  PeleC::h_prob_parm_device->massfrac_l[N2_ID] = PeleC::h_prob_parm_device->massfrac_r[N2_ID];
+  PeleC::h_prob_parm_device->massfrac_l[H2O_ID] = 1.0 - PeleC::h_prob_parm_device->massfrac_l[N2_ID];
+
 
   amrex::Real e_l;
   amrex::Real e_r /*, cs, cp */;
