@@ -53,8 +53,8 @@ pc_rst_int_e(
   const amrex::Real dual_energy_eta2,
   const int /*verbose*/)
 {
-  if (std::is_same<
-        pele::physics::PhysicsType::eos_type, pele::physics::eos::SRK>::value) {
+  if (std::is_same_v<
+        pele::physics::PhysicsType::eos_type, pele::physics::eos::SRK>) {
     if ((!allow_small_energy) || (!allow_negative_energy)) {
       amrex::Error("Small/negative energy must be allowed for nonideal EOS");
     }
@@ -220,7 +220,7 @@ pc_ctoprim(
   }
 #if NUM_AUX > 0
   for (int n = 0; n < NUM_AUX; n++) {
-    q(i, j, k, QFX + n) = u(i, j, k, UFX + n) / rho;
+    q(i, j, k, QFX + n) = u(i, j, k, UFX + n);
   }
 #endif
   // Handle passive variables that are not per unit mass
