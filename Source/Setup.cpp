@@ -209,6 +209,7 @@ PeleC::variableSetUp()
   Eden = cnt++;
   Eint = cnt++;
   Temp = cnt++;
+  Sootfoil = cnt++;
 
   if (NUM_ADV > 0) {
     FirstAdv = cnt;
@@ -312,6 +313,10 @@ PeleC::variableSetUp()
   set_scalar_bc(bc, phys_bc);
   bcs[cnt] = bc;
   name[cnt] = "Temp";
+  cnt++;
+  set_scalar_bc(bc, phys_bc);
+  bcs[cnt] = bc;
+  name[cnt] = "Sootfoil";
 
   // Define the ADV variable names
   ProblemSpecificFunctions::set_adv_names(adv_names);
