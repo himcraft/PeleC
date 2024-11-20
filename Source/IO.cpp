@@ -227,6 +227,8 @@ PeleC::set_state_in_checkpoint(amrex::Vector<int>& state_in_checkpoint)
     } else if (i == Work_Estimate_Type) {
       // Never use work estimate checkpoint
       state_in_checkpoint[i] = 0;
+    //} else if (i == Sootfoil_Type) {
+    //  state_in_checkpoint[i] = 1;
     } else {
       amrex::Abort("Unknown StateType");
     }

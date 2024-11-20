@@ -26,7 +26,8 @@
 #include "EBStencilTypes.H"
 #include "DiagBase.H"
 
-enum StateType { State_Type = 0, Reactions_Type, Work_Estimate_Type };
+//enum StateType { State_Type = 0, Reactions_Type, Work_Estimate_Type, Sootfoil_Type };
+enum StateType { State_Type = 0, Reactions_Type, Work_Estimate_Type};
 
 // Create storage for all source terms.
 

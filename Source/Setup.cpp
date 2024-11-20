@@ -417,6 +417,11 @@ PeleC::variableSetUp()
   desc_lst.setComponent(
     Work_Estimate_Type, 0, "WorkEstimate", bc,
     amrex::StateDescriptor::BndryFunc(pc_nullfill));
+  
+  /*desc_lst.addDescriptor(
+    Sootfoil_Type, amrex::IndexType::TheCellType(), amrex::StateDescriptor::Point,
+    ngrow_state, 1, interp, state_data_extrap, store_in_checkpoint);
+  desc_lst.setComponent(Sootfoil_Type, 0, "Sootfoil", bcs[0], bndryfunc1);*/
 
   num_state_type = desc_lst.size();
 

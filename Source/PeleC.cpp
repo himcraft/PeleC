@@ -698,6 +698,12 @@ PeleC::initData()
 
   S_new.setVal(0.0);
 
+  /*
+  amrex::MultiFab& Soot_new = get_new_data(Sootfoil_Type);
+  Soot_new.setVal(0.0);
+  */
+
+
 #if AMREX_SPACEDIM > 1
   // make sure dx = dy = dz -- that's all we guarantee to support
   const amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
