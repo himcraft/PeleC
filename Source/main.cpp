@@ -139,6 +139,10 @@ main(int argc, char* argv[])
   amrptr->doInSituViz(amrptr->levelSteps(0));
 #endif
 
+  // Add a MultiFab to store Pmax to visualize sootfoil.
+  std::unique_ptr<MultiFab> pmax;
+  amrex::Geometry pmax_geom;
+
   // If we set the regrid_on_restart flag and if we are *not* going to take
   // a time step then we want to go ahead and regrid here.
   if (
