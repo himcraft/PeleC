@@ -14,6 +14,7 @@
 
 #include "PeleC.H"
 #include "PeleCAmr.H"
+#include "prob.H"
 
 std::string inputs_name;
 
@@ -140,8 +141,33 @@ main(int argc, char* argv[])
 #endif
 
   // Add a MultiFab to store Pmax to visualize sootfoil.
-  std::unique_ptr<MultiFab> pmax;
+  std::unique_ptr<amrex::MultiFab> pmax;
   amrex::Geometry pmax_geom;
+  //amrex::Box pmax_box(amrex::IntVect::TheZeroVector(),amrex::IntVect(n_cell));
+  //amrex::Box pmax_box(amrptr->Geom(0).Domain());
+  amrex::BoxArray pmax_ba = amrptr->getLevel(0).boxArray();
+  for (int i = 0; i< amrptr->maxLevel(); i++)
+  {
+    //pmax_box.refine(amrptr->refRatio(i));
+    pmax_ba.refine(amrptr->refRatio(i));
+  } 
+  //pmax_geom.define(pmax_box, amrptr->Geom(0).ProbDomain(), 0, amrex::AMREX_D_DECL(0,0,0));
+  pmax.reset(new amrex::MultiFab(pmax_ba,amrex::DistributionMapping(pmax_ba),1,0));
+  pmax->setVal(0.0);
+  for (amrex::MFIter mfi(*pmax, amrex::TilingIfNotGPU()); mfi.isValid(); ++mfi)
+  {
+    const amrex::Box& box = mfi.tilebox();
+    const auto geomdata = pmax_geom.data();
+    const ProbParmDevice* lprobparm = PeleC::d_prob_parm_device;
+    amrex::Array4<amrex::Real> const& sarrs = pmax->array(mfi);
+    amrex::ParallelFor(
+      box, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+        pc_initsoot(i, j, k, sarrs, geomdata, *lprobparm);
+      });
+  }
+    //amrex::Gpu::synchronize();
+  amrex::WriteSingleLevelPlotfile("test000",*pmax,{"comp0"},pmax_geom,0.,0);
+    
 
   // If we set the regrid_on_restart flag and if we are *not* going to take
   // a time step then we want to go ahead and regrid here.
