@@ -147,7 +147,7 @@ main(int argc, char* argv[])
   amrex::Box pmax_box(amrptr->Geom(0).Domain());
   amrex::BoxArray pmax_ba = amrptr->getLevel(0).boxArray();
   //for (int i = 0; i< amrptr->maxLevel(); i++)
-  for (int i = 0; i< 3; i++)
+  for (int i = 0; i< PeleC::d_prob_parm_device->sootfoil_level; i++)
   {
     pmax_box.refine(amrptr->refRatio(i));
     pmax_ba.refine(amrptr->refRatio(i));
@@ -199,6 +199,9 @@ main(int argc, char* argv[])
     // Get the elapsed time
     wall_time_elapsed = amrex::ParallelDescriptor::second() - dRunTime1;
     amrex::ParallelDescriptor::ReduceRealMax(wall_time_elapsed);
+    if(amrptr->levelSteps(0) % amrptr->checkInt() ==0) {
+    amrex::VisMF::Write(*pmax, "sootfoil"); 
+    }
   }
 
   // Write final checkpoint
@@ -223,10 +226,11 @@ main(int argc, char* argv[])
                    << time_now.tm_mday << "." << std::endl;
   }
 
-  //amrex::WriteSingleLevelPlotfile("test000",*pmax,{"comp0"},pmax_geom,0.,0);
+  amrex::WriteSingleLevelPlotfile("test000",*pmax,{"comp0"},pmax_geom,0.,0);
 
   bool raise_failure = (amrptr->okToContinue() == 0);
   delete amrptr;
+  pmax.reset();
 
   // This MUST follow the above delete as ~Amr() may dump files to disk
   const int IOProc = amrex::ParallelDescriptor::IOProcessorNumber();
