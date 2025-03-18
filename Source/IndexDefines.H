@@ -10,7 +10,8 @@
 #define UEDEN 4
 #define UEINT 5
 #define UTEMP 6
-#define UFA 7
+#define USOOTF 7
+#define UFA 8
 
 #define QRHO 0
 #define QU 1
@@ -47,7 +48,7 @@
 #define comp_Cs2ovPrT comp_PrT
 #define nCompC (comp_PrT + 1)
 
-#define NTHERM 7
+#define NTHERM 8
 #define QTHERM 8
 
 #ifndef NUM_ADV
