@@ -3,7 +3,7 @@
 #include "AMReX_EB_Redistribution.H"
 #include "EB.H"
 #include "prob.H"
-#include "Utilities.H"
+#include "PeleCUtilities.H"
 #include "Geometry.H"
 
 inline bool
@@ -122,16 +122,17 @@ PeleC::initialize_eb2_structs()
       // Now fill the sv_eb_bndry_geom
       auto const& vfrac_arr = vfrac.const_array(mfi);
       auto const& bndrycent_arr = bndrycent->const_array(mfi);
-      AMREX_D_TERM(auto const& apx = areafrac[0]->const_array(mfi);
-                   , auto const& apy = areafrac[1]->const_array(mfi);
-                   , auto const& apz = areafrac[2]->const_array(mfi);)
+      AMREX_D_TERM(
+        auto const& apx = areafrac[0]->const_array(mfi);
+        , auto const& apy = areafrac[1]->const_array(mfi);
+        , auto const& apz = areafrac[2]->const_array(mfi);)
       pc_fill_sv_ebg(
         tbox, ncutcells, vfrac_arr, bndrycent_arr, AMREX_D_DECL(apx, apy, apz),
         sv_eb_bndry_geom[iLocal].data());
 
       // Fill in boundary gradient for cut cells in this grown tile
       sv_eb_bndry_grad_stencil[iLocal].resize(ncutcells);
-      const amrex::Real dx = geom.CellSize()[0];
+      const auto& dx = geom.CellSizeArray();
       if (bgs == 0) {
         pc_fill_bndry_grad_stencil_quadratic(
           tbox, dx, ncutcells, sv_eb_bndry_geom[iLocal].data(), ncutcells,
@@ -561,12 +562,13 @@ PeleC::extend_signed_distance(
   // signed distance and propagates it manually up to the point where we need to
   // have it for derefining.
   BL_PROFILE("PeleC::extend_signed_distance()");
-  const auto geomdata = parent->Geom(0).data();
   amrex::Real maxSignedDist = signDist->max(0);
   const auto& ebfactory =
     dynamic_cast<amrex::EBFArrayBoxFactory const&>(signDist->Factory());
   const auto& flags = ebfactory.getMultiEBCellFlagFab();
   int nGrowFac = flags.nGrow() + 1;
+  const auto& dx = parent->Geom(0).CellSizeArray();
+  const amrex::Real dx_max = *std::max_element(dx.begin(), dx.end());
 
   // First set the region far away at the max value we need
   auto const& sd_ccs = signDist->arrays();
@@ -576,8 +578,7 @@ PeleC::extend_signed_distance(
     [=] AMREX_GPU_DEVICE(int nbx, int i, int j, int k) noexcept {
       const auto& sd_cc = sd_ccs[nbx];
       if (sd_cc(i, j, k) >= maxSignedDist - 1e-12) {
-        const amrex::Real* dx = geomdata.CellSize();
-        sd_cc(i, j, k) = nGrowFac * dx[0] * extendFactor;
+        sd_cc(i, j, k) = nGrowFac * dx_max * extendFactor;
       }
     });
   amrex::Gpu::synchronize();
@@ -601,8 +602,7 @@ PeleC::extend_signed_distance(
       ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
         const auto glo = amrex::lbound(gbx);
         const auto ghi = amrex::ubound(gbx);
-        const amrex::Real* dx = geomdata.CellSize();
-        const amrex::Real extendedDist = dx[0] * extendFactor;
+        const amrex::Real extendedDist = dx_max * extendFactor;
         if (sd_cc(i, j, k) >= maxSignedDist - 1e-12) {
           amrex::Real closestEBDist = 1e12;
           for (int kk = glo.z; kk <= ghi.z; ++kk) {
@@ -680,15 +680,17 @@ PeleC::InitialRedistribution(
       amrex::Array4<const amrex::Real> AMREX_D_DECL(fcx, fcy, fcz), ccc,
         AMREX_D_DECL(apx, apy, apz);
 
-      AMREX_D_TERM(fcx = facecent[0]->const_array(mfi);
-                   , fcy = facecent[1]->const_array(mfi);
-                   , fcz = facecent[2]->const_array(mfi););
+      AMREX_D_TERM(
+        fcx = facecent[0]->const_array(mfi);
+        , fcy = facecent[1]->const_array(mfi);
+        , fcz = facecent[2]->const_array(mfi););
 
       ccc = fact.getCentroid().const_array(mfi);
 
-      AMREX_D_TERM(apx = areafrac[0]->const_array(mfi);
-                   , apy = areafrac[1]->const_array(mfi);
-                   , apz = areafrac[2]->const_array(mfi););
+      AMREX_D_TERM(
+        apx = areafrac[0]->const_array(mfi);
+        , apy = areafrac[1]->const_array(mfi);
+        , apz = areafrac[2]->const_array(mfi););
 
       const auto& sarr = S_new.array(mfi);
       const auto& tarr = tmp.array(mfi);

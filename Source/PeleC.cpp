@@ -28,7 +28,7 @@ using namespace MASA;
 #include "Derive.H"
 #include "prob.H"
 #include "Timestep.H"
-#include "Utilities.H"
+#include "PeleCUtilities.H"
 #include "Tagging.H"
 #include "IndexDefines.H"
 
@@ -219,8 +219,9 @@ PeleC::read_params()
     } else if (lo_bc_char[dir] == "UserBC") {
       lo_bc[dir] = 6;
     } else {
-      amrex::Abort("Wrong boundary condition word in lo_bc, please use: "
-                   "Interior, UserBC, Symmetry, SlipWall, NoSlipWall");
+      amrex::Abort(
+        "Wrong boundary condition word in lo_bc, please use: "
+        "Interior, UserBC, Symmetry, SlipWall, NoSlipWall");
     }
 
     if (hi_bc_char[dir] == "Interior") {
@@ -238,8 +239,9 @@ PeleC::read_params()
     } else if (hi_bc_char[dir] == "UserBC") {
       hi_bc[dir] = 6;
     } else {
-      amrex::Abort("Wrong boundary condition word in hi_bc, please use: "
-                   "Interior, UserBC, Symmetry, SlipWall, NoSlipWall");
+      amrex::Abort(
+        "Wrong boundary condition word in hi_bc, please use: "
+        "Interior, UserBC, Symmetry, SlipWall, NoSlipWall");
     }
   }
 
@@ -306,8 +308,9 @@ PeleC::read_params()
         lo_bc[dir] != PCPhysBCType::no_slip_wall &&
         lo_bc[dir] != PCPhysBCType::user_bc &&
         lo_bc[dir] != PCPhysBCType::inflow) {
-        amrex::Abort("Cannot have isothermal wall on a BC that isn't a wall or "
-                     "user defined BC");
+        amrex::Abort(
+          "Cannot have isothermal wall on a BC that isn't a wall or "
+          "user defined BC");
       }
       if (
         domhi_isothermal_temp[dir] > 0.0 &&
@@ -315,15 +318,17 @@ PeleC::read_params()
         hi_bc[dir] != PCPhysBCType::no_slip_wall &&
         hi_bc[dir] != PCPhysBCType::user_bc &&
         hi_bc[dir] != PCPhysBCType::inflow) {
-        amrex::Abort("Cannot have isothermal wall on a BC that isn't a wall or "
-                     "user defined BC");
+        amrex::Abort(
+          "Cannot have isothermal wall on a BC that isn't a wall or "
+          "user defined BC");
       }
     }
   }
 
   if (amrex::DefaultGeometry().IsRZ() && (lo_bc[0] != PCPhysBCType::symmetry)) {
-    amrex::Error("PeleC::read_params: must set r=0 boundary condition to "
-                 "Symmetry for r-z");
+    amrex::Error(
+      "PeleC::read_params: must set r=0 boundary condition to "
+      "Symmetry for r-z");
   }
 
   // TODO: Any reason to support spherical in PeleC?
@@ -651,12 +656,13 @@ PeleC::initData()
   // make sure dx = dy = dz -- that's all we guarantee to support
   const amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> dx = geom.CellSizeArray();
   const amrex::Real small = 1.e-13;
-  if (
+  const bool unequal_dx =
     amrex::max<amrex::Real>(AMREX_D_DECL(
       static_cast<amrex::Real>(0.0),
       static_cast<amrex::Real>(std::abs(dx[0] - dx[1])),
-      static_cast<amrex::Real>(std::abs(dx[0] - dx[2])))) > small * dx[0]) {
-    amrex::Abort("dx != dy != dz not supported");
+      static_cast<amrex::Real>(std::abs(dx[0] - dx[2])))) > small * dx[0];
+  if (eb_in_domain && unequal_dx) {
+    amrex::Abort("dx != dy != dz not supported with EB");
   }
 #endif
 
@@ -1120,7 +1126,7 @@ PeleC::post_restart()
     PeleC::h_prob_parm_device + 1, PeleC::d_prob_parm_device);
 
 #ifdef PELE_USE_SPRAY
-  postRestartParticles();
+  postRestartParticles(parent->theRestartFile());
 #endif
   // Initialize the reactor
   if (do_react) {
@@ -1793,17 +1799,18 @@ PeleC::errorEst(
 
     // Estimate how far I need to derefine
     const amrex::Real safetyFac = tagging_parm->detag_eb_factor;
-    amrex::Real clearTagDist =
-      parent->Geom(tagging_parm->max_eb_refine_lev).CellSize(0) *
-      static_cast<amrex::Real>(
-        parent->nErrorBuf(tagging_parm->max_eb_refine_lev)) *
-      safetyFac;
+    const auto& dx =
+      parent->Geom(tagging_parm->max_eb_refine_lev).CellSizeArray();
+    const amrex::Real dx_max = *std::max_element(dx.begin(), dx.end());
+    amrex::Real clearTagDist = dx_max *
+                               static_cast<amrex::Real>(parent->nErrorBuf(
+                                 tagging_parm->max_eb_refine_lev)) *
+                               safetyFac;
     const int finest_level = parent->finestLevel();
     for (int ilev = tagging_parm->max_eb_refine_lev + 1; ilev <= finest_level;
          ++ilev) {
       clearTagDist +=
-        static_cast<amrex::Real>(parent->nErrorBuf(ilev)) *
-        parent->Geom(tagging_parm->max_eb_refine_lev).CellSize(0) * safetyFac;
+        static_cast<amrex::Real>(parent->nErrorBuf(ilev)) * dx_max * safetyFac;
     }
 
     // Untag cells too close to EB
@@ -2291,9 +2298,10 @@ PeleC::build_interior_boundary_mask(int ng)
     ib_mask.resize(0);
   }
 
-  ib_mask.push_back(std::make_unique<amrex::iMultiFab>(
-    grids, dmap, 1, ng, amrex::MFInfo(),
-    amrex::DefaultFabFactory<amrex::IArrayBox>()));
+  ib_mask.push_back(
+    std::make_unique<amrex::iMultiFab>(
+      grids, dmap, 1, ng, amrex::MFInfo(),
+      amrex::DefaultFabFactory<amrex::IArrayBox>()));
 
   amrex::iMultiFab* imf = ib_mask.back().get();
   int ghost_covered_by_valid = 0;
