@@ -2,6 +2,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <ctime>
 
 #ifdef AMREX_USE_OMP
@@ -22,6 +23,10 @@
 
 #ifdef PELE_USE_SPRAY
 #include "SprayParticles.H"
+#endif
+
+#ifdef PELE_USE_CMAKE
+#include "PeleGitHashes.H"
 #endif
 
 // PeleC maintains an internal checkpoint version numbering system.
@@ -60,7 +65,7 @@ PeleC::check_state_in_checkpoint(const StateType state_type)
       std::string faHeaderName;
       fais >> faHeaderName;
       if (!fais.eof()) {
-        if (faHeaderName.rfind(state_pfx, 0) == 0) {
+        if (faHeaderName.starts_with(state_pfx)) {
           return true;
         }
       }
@@ -508,30 +513,34 @@ PeleC::writeJobInfo(const std::string& dir)
 
   jobInfoFile << "\n";
 
-  const char* githash1 = amrex::buildInfoGetGitHash(1);
-  const char* githash2 = amrex::buildInfoGetGitHash(2);
-  const char* githash3 = amrex::buildInfoGetGitHash(3);
-  const char* githash4 = amrex::buildInfoGetGitHash(4);
-  const char* githash5 = amrex::buildInfoGetGitHash(5);
-  if (strlen(githash1) > 0) {
-    jobInfoFile << "PeleC       git hash: " << githash1 << "\n";
+#ifdef PELE_USE_CMAKE
+  const std::string pele_hash = PeleBuildInfo::PeleLMeX_git_hash;
+  const std::string amrex_hash = PeleBuildInfo::AMReX_git_hash;
+  const std::string pelephysics_hash = PeleBuildInfo::PelePhysics_git_hash;
+  const std::string sundials_hash = PeleBuildInfo::SUNDIALS_git_hash;
+#else
+  const std::string pele_hash = amrex::buildInfoGetGitHash(1);
+  const std::string amrex_hash = amrex::buildInfoGetGitHash(2);
+  const std::string pelephysics_hash = amrex::buildInfoGetGitHash(3);
+  const std::string sundials_hash = amrex::buildInfoGetGitHash(4);
+#endif
+
+  if (!pele_hash.empty()) {
+    jobInfoFile << "PeleC       git hash: " << pele_hash << "\n";
   }
-  if (strlen(githash2) > 0) {
-    jobInfoFile << "AMReX       git hash: " << githash2 << "\n";
+  if (!amrex_hash.empty()) {
+    jobInfoFile << "AMReX       git hash: " << amrex_hash << "\n";
   }
-  if (strlen(githash3) > 0) {
-    jobInfoFile << "PelePhysics git hash: " << githash3 << "\n";
+  if (!pelephysics_hash.empty()) {
+    jobInfoFile << "PelePhysics git hash: " << pelephysics_hash << "\n";
   }
-  if (strlen(githash4) > 0) {
-    jobInfoFile << "AMReX-Hydro git hash: " << githash4 << "\n";
-  }
-  if (strlen(githash5) > 0) {
-    jobInfoFile << "SUNDIALS    git hash: " << githash5 << "\n";
+  if (!sundials_hash.empty()) {
+    jobInfoFile << "SUNDIALS    git hash: " << sundials_hash << "\n";
   }
 
-  const char* buildgithash = amrex::buildInfoGetBuildGitHash();
-  const char* buildgitname = amrex::buildInfoGetBuildGitName();
-  if (strlen(buildgithash) > 0) {
+  const std::string buildgithash = amrex::buildInfoGetBuildGitHash();
+  const std::string buildgitname = amrex::buildInfoGetBuildGitName();
+  if (!buildgithash.empty()) {
     jobInfoFile << buildgitname << " git hash: " << buildgithash << "\n";
   }
 
@@ -643,30 +652,33 @@ PeleC::writeBuildInfo(std::ostream& os)
   }
 
   os << "\n";
-  const char* githash1 = amrex::buildInfoGetGitHash(1);
-  const char* githash2 = amrex::buildInfoGetGitHash(2);
-  const char* githash3 = amrex::buildInfoGetGitHash(3);
-  const char* githash4 = amrex::buildInfoGetGitHash(4);
-  const char* githash5 = amrex::buildInfoGetGitHash(5);
-  if (strlen(githash1) > 0) {
-    os << "PeleC       git hash: " << githash1 << "\n";
+#if PELE_USE_CMAKE
+  const std::string pele_hash = PeleBuildInfo::PeleLMeX_git_hash;
+  const std::string amrex_hash = PeleBuildInfo::AMReX_git_hash;
+  const std::string pelephysics_hash = PeleBuildInfo::PelePhysics_git_hash;
+  const std::string sundials_hash = PeleBuildInfo::SUNDIALS_git_hash;
+#else
+  const std::string pele_hash = amrex::buildInfoGetGitHash(1);
+  const std::string amrex_hash = amrex::buildInfoGetGitHash(2);
+  const std::string pelephysics_hash = amrex::buildInfoGetGitHash(3);
+  const std::string sundials_hash = amrex::buildInfoGetGitHash(4);
+#endif
+  if (!pele_hash.empty()) {
+    os << "PeleC       git hash: " << pele_hash << "\n";
   }
-  if (strlen(githash2) > 0) {
-    os << "AMReX       git hash: " << githash2 << "\n";
+  if (!amrex_hash.empty()) {
+    os << "AMReX       git hash: " << amrex_hash << "\n";
   }
-  if (strlen(githash3) > 0) {
-    os << "PelePhysics git hash: " << githash3 << "\n";
+  if (!pelephysics_hash.empty()) {
+    os << "PelePhysics git hash: " << pelephysics_hash << "\n";
   }
-  if (strlen(githash4) > 0) {
-    os << "AMReX-Hydro git hash: " << githash4 << "\n";
-  }
-  if (strlen(githash5) > 0) {
-    os << "SUNDIALS    git hash: " << githash5 << "\n";
+  if (!sundials_hash.empty()) {
+    os << "SUNDIALS    git hash: " << sundials_hash << "\n";
   }
 
-  const char* buildgithash = amrex::buildInfoGetBuildGitHash();
-  const char* buildgitname = amrex::buildInfoGetBuildGitName();
-  if (strlen(buildgithash) > 0) {
+  const std::string buildgithash = amrex::buildInfoGetBuildGitHash();
+  const std::string buildgitname = amrex::buildInfoGetBuildGitName();
+  if (!buildgithash.empty()) {
     os << buildgitname << " git hash: " << buildgithash << "\n";
   }
 
@@ -748,8 +760,9 @@ PeleC::initLevelDataFromPlt(
   const int lev, const std::string& dataPltFile, amrex::MultiFab& S_new)
 {
   if (do_rf) {
-    amrex::Error("PeleC::initLevelDataFromPlt(): Restart from plot file not "
-                 "yet supported with rotational frame");
+    amrex::Error(
+      "PeleC::initLevelDataFromPlt(): Restart from plot file not "
+      "yet supported with rotational frame");
     // not ready for rotational frames, relatively simple modification for
     // computing energy from velocities required
   }

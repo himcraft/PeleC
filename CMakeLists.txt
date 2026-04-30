@@ -27,6 +27,7 @@ option(PELE_ENABLE_HDF5 "Enable plot file output using HDF5" OFF)
 option(PELE_ENABLE_HDF5_ZFP "Enable ZFP compression in HDF5" OFF)
 option(PELE_ENABLE_ASCENT "Enable Ascent in-situ visualization" OFF)
 option(PELE_EXCLUDE_BUILD_IN_CI "Exclude some builds when running in the CI" OFF)
+option(PELE_SKIP_NON_FCOMPARE_TESTS "For reference comparison in CI skip tests not being used for comparison" OFF)
 set(PELE_PRECISION "DOUBLE" CACHE STRING "Floating point precision SINGLE or DOUBLE")
 
 #Options for performance
@@ -37,7 +38,7 @@ option(PELE_ENABLE_HIP "Enable HIP" OFF)
 option(PELE_ENABLE_SYCL "Enable SyCL" OFF)
 
 #Options for C++
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -47,9 +48,9 @@ endif()
 
 if(PELE_ENABLE_CUDA)
   enable_language(CUDA)
-  if(CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "10.0")
+  if(CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "12.0")
     message(FATAL_ERROR "Your nvcc version is ${CMAKE_CUDA_COMPILER_VERSION} which is unsupported."
-      "Please use CUDA toolkit version 10.0 or newer.")
+      "Please use CUDA toolkit version 12.0 or newer.")
   endif()
   if(PELE_ENABLE_MASA)
     message(FATAL_ERROR "MASA enabled with CUDA is unsupported.")
@@ -121,6 +122,7 @@ endif()
 init_code_checks()
 
 include(SetRpath)
+include(SetGitHashInfo)
 
 add_subdirectory(Exec)
 add_subdirectory(Tests)

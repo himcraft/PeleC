@@ -159,6 +159,7 @@ computeTangentialVelDerivs(
   const amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> dx)
 {
   BL_PROFILE("PeleC::pc_compute_tangential_vel_derivs()");
+#if AMREX_SPACEDIM == 3
   for (int dir = 0; dir < AMREX_SPACEDIM; dir++) {
     tander_ec[dir].resize(
       eboxes[dir], GradUtils::nCompTan, amrex::The_Async_Arena());
@@ -172,6 +173,10 @@ computeTangentialVelDerivs(
           i, j, k, q_ar, dir, d1, d2, tanders[dir]);
       });
   }
+#else
+  amrex::ignore_unused(eboxes, tander_ec, tanders, q_ar, dx);
+  amrex::Abort("computeTangentialVelDerivs: only supported in 3D");
+#endif
 }
 
 void
@@ -313,7 +318,7 @@ PeleC::getSmagorinskyLESTerm(
           amrex::ParallelFor(
             eboxes[dir], [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
               pc_smagorinsky_sfs_term(
-                i, j, k, q_ar, tanders[dir], a[dir], dx[dir], dir, Cs_local,
+                i, j, k, q_ar, tanders[dir], a[dir], dx, dir, Cs_local,
                 CI_local, PrT_local, flx[dir]);
             });
         }
@@ -701,7 +706,7 @@ PeleC::getWALELESTerm(
           amrex::ParallelFor(
             eboxes[dir], [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
               pc_wale_sfs_term(
-                i, j, k, q_ar, tanders[dir], a[dir], dx[dir], dir, Cw_local,
+                i, j, k, q_ar, tanders[dir], a[dir], dx, dir, Cw_local,
                 CI_local, PrT_local, flx[dir]);
             });
         }
@@ -808,7 +813,7 @@ PeleC::getVremanLESTerm(
           amrex::ParallelFor(
             eboxes[dir], [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
               pc_vreman_sfs_term(
-                i, j, k, q_ar, tanders[dir], a[dir], dx[dir], dir, Cs_local,
+                i, j, k, q_ar, tanders[dir], a[dir], dx, dir, Cs_local,
                 CI_local, PrT_local, flx[dir]);
             });
         }

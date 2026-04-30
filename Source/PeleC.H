@@ -15,7 +15,7 @@
 #endif
 
 #include "Filter.H"
-#include "Utilities.H"
+#include "PeleCUtilities.H"
 #include "Tagging.H"
 #include "IndexDefines.H"
 #include "prob_parm.H"
@@ -144,7 +144,7 @@ public:
   void createDataParticles();
 
   // How to initialize at restart
-  void postRestartParticles();
+  void postRestartParticles(const std::string& restart_file);
 
   // Post timestep particle functions
   void postTimeStepParticles(int iteration);
@@ -463,9 +463,6 @@ public:
   // Remove data at old time.
   void removeOldData() override;
 
-  // Passes some data about the grid
-  void setGridInfo();
-
   // Print information about energy budget.
   void do_energy_diagnostics();
 
@@ -621,7 +618,7 @@ public:
     const int* bcrec,
     const int level);
 
-  static int Density, Xmom, Ymom, Zmom, Eden, Eint, Temp;
+  static int Density, Xmom, Ymom, Zmom, Eden, Eint, Temp, Sootfoil;
 
   static int FirstAdv;
   static int FirstSpec;
@@ -705,6 +702,7 @@ protected:
   void init_filters();
 
   void init_diagnostics();
+  void do_diagnostics();
 
 #ifdef PELE_USE_MASA
   static void init_mms();

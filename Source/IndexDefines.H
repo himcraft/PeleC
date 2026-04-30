@@ -10,7 +10,8 @@
 #define UEDEN 4
 #define UEINT 5
 #define UTEMP 6
-#define UFA 7
+#define USOOTF 7
+#define UFA 8
 
 #define QRHO 0
 #define QU 1
@@ -47,7 +48,7 @@
 #define comp_Cs2ovPrT comp_PrT
 #define nCompC (comp_PrT + 1)
 
-#define NTHERM 7
+#define NTHERM 8
 #define QTHERM 8
 
 #ifndef NUM_ADV
@@ -77,6 +78,16 @@
 #define QVAR (QTHERM + NUM_ADV + NUM_SPECIES + NUM_AUX + NUM_LIN)
 #define NQAUX 6
 #define NGDNV 6
+
+#define R_RHO 0
+#define R_UN 1
+#define R_UT1 2
+#define R_UT2 3
+#define R_P 4
+#define R_ADV 5
+#define R_Y (R_ADV + NUM_ADV)
+#define R_LIN (R_Y + NUM_SPECIES + NUM_AUX)
+#define R_NUM (5 + NUM_SPECIES + NUM_ADV + NUM_LIN + NUM_AUX)
 
 #if AMREX_SPACEDIM == 1
 // hopefully we won't do EB in 1D
