@@ -1,3 +1,5 @@
+#include <utility>
+
 #include "PeleCAmr.H"
 
 #ifdef PELE_USE_SPRAY
@@ -18,7 +20,7 @@ PeleCAmr::writePlotFile()
   }
 
   // Don't continue if we have no variables to plot.
-  if (statePlotVars().empty()) {
+  if (statePlotVars().empty() && derivePlotVars().empty()) {
     return;
   }
 
@@ -60,7 +62,7 @@ PeleCAmr::writeSmallPlotFile()
   }
 
   // Don't continue if we have no variables to plot.
-  if (stateSmallPlotVars().empty()) {
+  if (stateSmallPlotVars().empty() && deriveSmallPlotVars().empty()) {
     return;
   }
 
@@ -87,34 +89,54 @@ PeleCAmr::constructPlotMF(
 
   const auto& desc_lst = amrex::AmrLevel::get_desc_lst();
   amrex::Vector<std::pair<int, int>> plot_var_map;
+  const auto is_state_plot_var = [regular](const std::string& name) {
+    return regular ? amrex::Amr::isStatePlotVar(name)
+                   : amrex::Amr::isStateSmallPlotVar(name);
+  };
   for (int typ = 0; typ < desc_lst.size(); typ++) {
     for (int comp = 0; comp < desc_lst[typ].nComp(); comp++) {
       if (
-        amrex::Amr::isStatePlotVar(desc_lst[typ].name(comp)) &&
+        is_state_plot_var(desc_lst[typ].name(comp)) &&
         desc_lst[typ].getType() == amrex::IndexType::TheCellType()) {
-        plot_var_map.push_back(std::pair<int, int>(typ, comp));
+        plot_var_map.emplace_back(typ, comp);
       }
     }
   }
 
   int num_derive = 0;
   auto& derive_lst = amrex::AmrLevel::get_derive_lst();
-  std::list<std::string> derive_names;
+  amrex::Vector<std::pair<const amrex::DeriveRec*, amrex::Vector<int>>>
+    derive_var_map;
   const std::list<amrex::DeriveRec>& dlist = derive_lst.dlist();
-  if (regular) {
-    for (const auto& it : dlist) {
-      if (amrex::Amr::isDerivePlotVar(it.name())) {
-        derive_names.push_back(it.name());
-        num_derive += it.numDerive();
+  const auto is_derive_plot_var = [regular](const std::string& name) {
+    return regular ? amrex::Amr::isDerivePlotVar(name)
+                   : amrex::Amr::isDeriveSmallPlotVar(name);
+  };
+  // Select either an entire derive record or individual output components.
+  for (const auto& it : dlist) {
+    const bool select_all_components = is_derive_plot_var(it.name());
+    amrex::Vector<int> selected_components;
+    for (int comp = 0; comp < it.numDerive(); ++comp) {
+      if (
+        select_all_components ||
+        is_derive_plot_var(it.variableName(comp))) {
+        selected_components.push_back(comp);
       }
     }
+    if (!selected_components.empty()) {
+      num_derive += static_cast<int>(selected_components.size());
+      derive_var_map.emplace_back(&it, std::move(selected_components));
+    }
+  }
+
 #ifdef PELE_USE_SPRAY
+  if (regular) {
     // Add spray derive variables
     if (SprayParticleContainer::NumDeriveVars() > 0) {
       num_derive += SprayParticleContainer::NumDeriveVars();
     }
-#endif
   }
+#endif
 
   // Decide to plot vfrac
   bool plot_vfrac =
@@ -124,6 +146,12 @@ PeleCAmr::constructPlotMF(
 
   const auto n_data_items =
     plot_var_map.size() + num_derive + static_cast<int>(plot_vfrac);
+
+  if (n_data_items == 0) {
+    amrex::Abort(
+      regular ? "No valid variables selected for plotfile"
+              : "No valid variables selected for small plotfile");
+  }
 
   const int nGrow = 0;
   const amrex::Real cur_time =
@@ -147,14 +175,21 @@ PeleCAmr::constructPlotMF(
     }
 
     // Cull data from derived variables.
-    if ((!derive_names.empty())) {
-      for (const auto& derive_name : derive_names) {
-        const amrex::DeriveRec* rec = derive_lst.get(derive_name);
-        int ncomp = rec->numDerive();
-
-        auto derive_dat = amr_level[lev]->derive(derive_name, cur_time, nGrow);
-        amrex::MultiFab::Copy(*plotMFs[lev], *derive_dat, 0, cnt, ncomp, nGrow);
-        cnt += ncomp;
+    if (!derive_var_map.empty()) {
+      for (const auto& [rec, selected_components] : derive_var_map) {
+        auto derive_dat =
+          amr_level[lev]->derive(rec->name(), cur_time, nGrow);
+        if (static_cast<int>(selected_components.size()) == rec->numDerive()) {
+          amrex::MultiFab::Copy(
+            *plotMFs[lev], *derive_dat, 0, cnt, rec->numDerive(), nGrow);
+          cnt += rec->numDerive();
+        } else {
+          for (const int comp : selected_components) {
+            amrex::MultiFab::Copy(
+              *plotMFs[lev], *derive_dat, comp, cnt, 1, nGrow);
+            ++cnt;
+          }
+        }
       }
     }
 
@@ -195,10 +230,9 @@ PeleCAmr::constructPlotMF(
     plt_var_names.push_back(desc_lst[typ].name(comp));
   }
 
-  for (const auto& derive_name : derive_names) {
-    const amrex::DeriveRec* rec = derive_lst.get(derive_name);
-    for (int i = 0; i < rec->numDerive(); i++) {
-      plt_var_names.push_back(rec->variableName(i));
+  for (const auto& [rec, selected_components] : derive_var_map) {
+    for (const int comp : selected_components) {
+      plt_var_names.push_back(rec->variableName(comp));
     }
   }
 

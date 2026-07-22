@@ -1,0 +1,73 @@
+# ------------------  INPUTS TO MAIN PROGRAM  -------------------
+max_step = 0
+stop_time = 0.0005
+
+# PROBLEM SIZE & GEOMETRY
+geometry.is_periodic = 1 1 1
+geometry.coord_sys   = 0
+geometry.prob_lo     = 0.0 0.0 0.0
+geometry.prob_hi     = 0.62831853071795864 0.62831853071795864 0.62831853071795864
+amr.n_cell           = 8 8 8
+
+# BOUNDARY CONDITIONS
+pelec.lo_bc = "Interior" "Interior" "Interior"
+pelec.hi_bc = "Interior" "Interior" "Interior"
+
+# PHYSICS
+pelec.do_hydro = 1
+pelec.diffuse_vel = 1
+pelec.diffuse_temp = 1
+pelec.diffuse_spec = 1
+pelec.diffuse_enth = 1
+pelec.do_react = 1
+pelec.chem_integrator = "ReactorCvode"
+cvode.solve_type = "GMRES"
+
+# TIME STEP CONTROL
+pelec.cfl         = 0.25
+pelec.init_shrink = 0.3
+pelec.change_max  = 1.1
+pelec.dt_cutoff   = 5.e-20
+
+# DIAGNOSTICS & VERBOSITY
+pelec.sum_interval = -1
+pelec.v = 0
+amr.v = 0
+
+# REFINEMENT / REGRIDDING
+amr.max_level       = 0
+amr.blocking_factor = 4
+amr.max_grid_size   = 8
+amr.n_error_buf     = 2 2 2 2
+
+# CHECKPOINT FILES
+amr.checkpoint_files_output = 0
+amr.check_int = -1
+
+# PLOTFILES
+amr.plot_files_output = 1
+amr.file_name_digits = 5
+
+# Disable scheduled regular plotfiles. PeleC still writes a final plotfile,
+# which exercises a selection containing only derived variables.
+amr.plot_file = plt
+amr.plot_int = -1
+amr.plot_per = -1
+amr.plot_vars = NONE
+amr.derive_plot_vars = x_velocity pressure Y(H2) Y(O2) Y(H2O) Y(OH)
+pelec.plot_rhoy = 0
+pelec.plot_massfrac = 0
+pelec.plot_vfrac = 0
+
+# Write a small plotfile during initialization, before regular plot variables
+# have been initialized.
+amr.small_plot_file = smlplt
+amr.small_plot_int = 1
+amr.small_plot_vars = Temp heatRelease
+amr.derive_small_plot_vars = x_velocity pressure Y(H2) Y(O2) Y(H2O) Y(OH)
+
+# PROBLEM PARAMETERS
+prob.u0 = 400.0
+prob.iname = "profiles.dat"
+prob.case_type = "reacting"
+prob.nx = 256
