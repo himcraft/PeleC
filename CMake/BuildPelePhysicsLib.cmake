@@ -38,7 +38,9 @@ function(build_pele_physics_lib pele_physics_lib_name)
       ${PELE_PHYSICS_UTILITY_DIR}/Diagnostics/DiagFramePlane.H
       ${PELE_PHYSICS_UTILITY_DIR}/Diagnostics/DiagFramePlane.cpp
       ${PELE_PHYSICS_UTILITY_DIR}/Diagnostics/DiagPDF.H
-      ${PELE_PHYSICS_UTILITY_DIR}/Diagnostics/DiagPDF.cpp)
+      ${PELE_PHYSICS_UTILITY_DIR}/Diagnostics/DiagPDF.cpp
+      ${PELE_PHYSICS_UTILITY_DIR}/Diagnostics/DiagPoint.H
+      ${PELE_PHYSICS_UTILITY_DIR}/Diagnostics/DiagPoint.cpp)
     target_include_directories(${pele_physics_lib_name} PUBLIC ${PELE_PHYSICS_UTILITY_DIR}/Diagnostics)
 
     target_sources(${pele_physics_lib_name}

@@ -2039,8 +2039,8 @@ PeleC::do_diagnostics()
     // Timing info
     const int nstep = parent->levelSteps(0);
     const int finest_level = parent->finestLevel();
-    const amrex::Real dtlev = parent->dtLevel(0);
-    const amrex::Real cumtime = parent->cumTime() + dtlev;
+    // The initial state and a completed timestep have different parent clocks.
+    const amrex::Real cumtime = state[State_Type].curTime();
 
     bool do_diags = false;
     for (const auto& m_diagnostic : m_diagnostics) {

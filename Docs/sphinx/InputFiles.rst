@@ -273,6 +273,8 @@ Currently, the list of diagnostic contains:
 * ``DiagPDF`` : extract the PDF of a given variable and write it to an ASCII file.
 * ``DiagConditional`` : extract statistics (average and standard deviation, integral or sum) of a
   set of variables conditioned on the value of given variable and write it to an ASCII file.
+* ``DiagPoint`` : sample the finest valid cell containing a fixed physical position in a 2D or
+  3D simulation and append the selected variables to an ASCII time history.
 
 When using `DiagPDF` or `DiagConditional`, it is possible to narrow down the diagnostic to a region of interest
 by specifying a set of filters, defining a range of interest for a variable. Note also that for these two diagnostics,
@@ -290,3 +292,50 @@ details on the options that must be specified for each diagnostic type.
 
     pelec.xnormP.type = DiagFramePlane                             # Diagnostic type
     ...
+
+Fixed-point time histories
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``DiagPoint`` is provided by PelePhysics and uses the same state and derived field names as the other
+diagnostics. Each diagnostic instance samples one fixed position. For multiple points, give each
+instance its own name and output file. For example, in a 2D calculation::
+
+    pelec.diagnostics = probe1
+    pelec.probe1.type = DiagPoint
+    pelec.probe1.position = 0.5 0.2
+    pelec.probe1.field_names = pressure Temp
+    pelec.probe1.int = 1
+    pelec.probe1.file = probe1.dat
+
+In 3D, supply three coordinates for ``position``. Coordinates use the simulation's physical units
+(normally cm in PeleC), and field values retain their native PeleC units. The ``int`` parameter
+must be a positive number of coarse-grid steps; output is independent of plotfile scheduling.
+Time-period scheduling via ``per`` and diagnostic filters are not supported by ``DiagPoint``.
+If ``file`` is omitted, the diagnostic instance name is used as the filename.
+
+At each output, the diagnostic locates the finest valid cell containing the requested position,
+including after regridding or redistribution. It records the stored cell value without spatial
+interpolation. Finite-volume fields therefore represent cell averages rather than exact point
+values. A point exactly on an internal cell face selects the cell on its upper-coordinate side;
+a point on the physical upper boundary selects the final interior cell. Positions outside the
+physical domain are rejected. To reject cells fully covered by an embedded boundary, set
+``pelec.probe1.volume_fraction_field = vfrac``. This optional check is disabled by default so
+other host applications can use their own volume-fraction field name. For cut cells,
+the value represents the fluid portion of that cell; no subcell geometry test is performed.
+
+The first header line identifies the requested position. The next line gives the columns, in order:
+``step time x y [z] level cell_x cell_y [cell_z]`` followed by ``field_names`` in the requested
+order. ``level`` starts at zero, and ``cell_x``, ``cell_y``, and ``cell_z`` are the geometric cell
+center coordinates. Sampling at coarse-step synchronization does not add outputs at fine-level
+substeps or force the solver to use a particular physical timestep.
+In PeleC, the initial state is also recorded at step zero and its actual initial time.
+The existing Diagnostics path prepares the requested fields across the AMR hierarchy before
+sampling. Small point-history files therefore reduce output volume, but frequent diagnostics
+still incur field preparation costs, particularly for expensive derived quantities.
+
+Output is appended, including after restart. Existing headers must match the position, dimension,
+and selected field order. Repeating the final recorded step and time does not add a duplicate row.
+An older time or inconsistent step/time pair is rejected: when restarting from an earlier
+checkpoint, use a new output filename or explicitly move the old history aside. Malformed or
+incomplete existing records are also rejected, so a partial final line must be repaired or moved
+aside before appending.
