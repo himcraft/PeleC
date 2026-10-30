@@ -94,6 +94,9 @@ These parameters, once read, are available in the `PeleC` object for use from c+
     pelec.diffuse_temp = 0           # enable thermal diffusion
     pelec.diffuse_vel  = 0           # enable viscous diffusion
     pelec.diffuse_spec = 0           # enable species diffusion
+    pelec.use_multicomponent_diffusion = 0  # full multicomponent species diffusion (Fuego EOS, Simple transport, no spray/soot)
+    pelec.use_soret = 0              # thermal diffusion (Soret) term, needs use_multicomponent_diffusion, transport.conductivity_model = lct1|lct3 and a build with USE_LCT_TRANSPORT=TRUE
+    pelec.use_dufour = 0             # Dufour heat flux, needs use_soret
 
     #------------------------
     # DIAGNOSTICS & VERBOSITY
@@ -204,7 +207,7 @@ These parameters, once read, are available in the `PeleC` object for use from c+
    specify a value for the parameter `pelec.init_pltfile_coarse_levels`
    where the value is the number of factor of 2 coarsenings that separate
    the two grids. The init from plot file capability is based on the
-   PelePhysics `PltFileManager <https://amrex-combustion.github.io/PelePhysics/Utility.html#plt-file-management>`_ utility.
+   PelePhysics `PltFileManager <https://Pele-Suite.github.io/PelePhysics/Utility.html#plt-file-management>`_ utility.
 
 
 Tagging criteria
@@ -279,7 +282,7 @@ by specifying a set of filters, defining a range of interest for a variable. Not
 fine-covered regions are masked. An arbitrary number of these diagnostics may be specified in a list by setting
 ``pelec.diagnostics`` in the input file and then specifying the diagnostic type and relevant inputs for each
 diagnostic listed. See the
-`PelePhysics Diagnostics documentation <https://amrex-combustion.github.io/PelePhysics/Utility.html#diagnostics>`_ for full
+`PelePhysics Diagnostics documentation <https://Pele-Suite.github.io/PelePhysics/Utility.html#diagnostics>`_ for full
 details on the options that must be specified for each diagnostic type.
 
 ::
