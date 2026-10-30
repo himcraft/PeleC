@@ -244,6 +244,11 @@ endfunction(add_test_spray)
 add_test_r(multispecsod-1 MultiSpecSod 119.76)
 add_test_r(pmf-lidryer-arkode PMF 1009.96)
 add_test_r(pmf-lidryer-arkode-10dx PMF 1014.52)
+# Multicomponent diffusion (PelePhysics extended transport API; the PMF case
+# enables the LCT conductivity models). Costs estimated from the measured
+# 1.9x and 2.6x per-step ratios to pmf-lidryer-cvode
+add_test_r(pmf-lidryer-matrixdiff PMF 1250.0)
+add_test_r(pmf-lidryer-multicomp PMF 1700.0)
 add_test_r(pmf-srk-1 PMF-SRK 1965.39)
 add_test_rv(masscons-mol-1 MassCons 25.26)
 add_test_rv(masscons-mol-2 MassCons 25.03)
